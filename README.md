@@ -15,6 +15,7 @@ A comprehensive learning repository demonstrating **LangChain v1.3.14** concepts
 - [Quick Start](#quick-start)
 - [Project Structure](#project-structure)
 - [Notebooks Guide](#notebooks-guide)
+- [Agent Teams](#-agent-teams)
 - [Configuration](#configuration)
 - [Usage Examples](#usage-examples)
 - [Key Concepts](#key-concepts)
@@ -42,6 +43,7 @@ This repository is a **hands-on learning resource** for understanding and workin
 
 - 📓 **7 Interactive Jupyter Notebooks** with complete, runnable examples
 - 🤖 **Agent Patterns** — from simple tool-calling to complex multi-step reasoning
+- 👥 **Agent Teams** — Multi-agent architectures, orchestration, and collaboration
 - 🔌 **Multi-Provider Support** — OpenAI, Groq, Mistral AI, Google GenAI
 - 🛠️ **Tool Integration** — Define and use custom tools with agents
 - 📊 **Structured Output** — Generate validated, typed responses from LLMs
@@ -348,6 +350,296 @@ manager = CallbackManager([
 
 ---
 
+## 👥 Agent Teams
+
+### Overview
+
+**Agent Teams** enable building sophisticated multi-agent systems where multiple specialized agents collaborate to solve complex problems. Instead of a single agent handling all tasks, an agent team decomposes problems into sub-tasks, with each agent specializing in specific roles and responsibilities.
+
+### Why Use Agent Teams?
+
+**Single Agent Limitations:**
+- ❌ Cannot parallelize independent subtasks
+- ❌ Limited specialization (one agent, one knowledge base)
+- ❌ Poor at handling truly complex, multi-domain problems
+- ❌ Difficult to maintain separation of concerns
+
+**Agent Teams Benefits:**
+- ✅ **Parallelization** — Multiple agents work concurrently on different tasks
+- ✅ **Specialization** — Each agent has specific expertise and tools
+- ✅ **Scalability** — Add more agents for larger problems
+- ✅ **Maintainability** — Clear roles and responsibilities
+- ✅ **Resilience** — If one agent fails, others continue
+- ✅ **Real-World Simulation** — Models how humans solve complex problems
+
+### Agent Team Architectures
+
+#### 1. **Orchestrator Pattern**
+One agent coordinates and delegates tasks to specialized agents.
+
+```
+┌─────────────────────────┐
+│  Orchestrator Agent     │
+│  (Task Delegation)      │
+└───────────┬─────────────┘
+            │
+    ┌───────┼───────┐
+    │       │       │
+    ▼       ▼       ▼
+┌────────┐ ┌────────┐ ┌────────┐
+│Research│ │Analysis│ │Execution│
+│ Agent  │ │ Agent  │ │ Agent  │
+└────────┘ └────────┘ └────────┘
+```
+
+**Use Case:** Customer support, research automation, task management
+
+#### 2. **Peer-to-Peer Pattern**
+Agents communicate directly without a central orchestrator.
+
+```
+┌─────────┐     ┌─────────┐
+│ Agent 1 │────▶│ Agent 2 │
+└────┬────┘     └────┬────┘
+     │               │
+     ▼               ▼
+┌─────────┐     ┌─────────┐
+│ Agent 3 │────▶│ Agent 4 │
+└─────────┘     └─────────┘
+```
+
+**Use Case:** Debate, brainstorming, collaborative problem-solving
+
+#### 3. **Hierarchical Pattern**
+Multiple layers of agents with different levels of specialization.
+
+```
+              ┌──────────────┐
+              │ CEO Agent    │
+              └────┬─────────┘
+              ┌────┼────┐
+              │    │    │
+      ┌───────▼──┐ │ ┌──▼───────┐
+      │ Sales    │ │ │ Operations│
+      │ Manager  │ │ │ Manager   │
+      └───┬──────┘ │ └──┬────────┘
+          │        │    │
+      ┌───▼──┐ ┌───▼─┐ ┌▼───┐
+      │Agent1│ │Agent2│ │Agent3
+      └──────┘ └─────┘ └─────┘
+```
+
+**Use Case:** Large enterprises, complex organizations, strategic planning
+
+### Common Agent Types in Teams
+
+| Agent Type | Role | Example |
+|-----------|------|---------|
+| **Orchestrator** | Coordinates workflow, delegates tasks | Breaks down user query into subtasks |
+| **Researcher** | Gathers and analyzes information | Searches APIs, scrapes data, summarizes |
+| **Analyzer** | Processes and interprets data | Runs models, computes statistics |
+| **Executor** | Performs actions in the world | Books appointments, sends emails |
+| **Reviewer** | Validates results, checks quality | Fact-checks, validates outputs |
+| **Memory Agent** | Manages knowledge, context, state | Stores past decisions, manages KGs |
+| **Safety Agent** | Monitors and enforces constraints | Prevents harmful actions, audits |
+
+### Building Agent Teams with LangChain
+
+#### Example 1: Simple Orchestrator Pattern
+
+```python
+from langchain.agents import AgentExecutor, create_tool_calling_agent
+from langchain_openai import ChatOpenAI
+from langchain.tools import tool
+from langchain_core.prompts import ChatPromptTemplate
+
+# Define specialized agents
+research_agent = ChatOpenAI(model="gpt-4")
+analysis_agent = ChatOpenAI(model="gpt-4")
+
+@tool
+def research_tool(query: str) -> str:
+    """Research a topic on the web"""
+    return f"Research results for: {query}"
+
+@tool
+def analyze_tool(data: str) -> str:
+    """Analyze research data"""
+    return f"Analysis complete for: {data}"
+
+# Create orchestrator with routing
+orchestrator_prompt = ChatPromptTemplate.from_messages([
+    ("system", "You coordinate research and analysis tasks"),
+    ("human", "{input}")
+])
+
+orchestrator = create_tool_calling_agent(
+    research_agent, 
+    [research_tool, analyze_tool], 
+    orchestrator_prompt
+)
+
+executor = AgentExecutor(agent=orchestrator, tools=[research_tool, analyze_tool])
+
+# Run the team
+result = executor.invoke({"input": "Research AI trends and analyze the findings"})
+```
+
+#### Example 2: Multi-Agent Collaboration
+
+```python
+from langchain_openai import ChatOpenAI
+from langchain.agents import AgentExecutor, create_tool_calling_agent
+from langchain.tools import tool
+import asyncio
+
+# Define multiple agents with different specializations
+@tool
+def fetch_market_data(symbol: str) -> dict:
+    """Fetch current market data"""
+    return {"symbol": symbol, "price": 150.25}
+
+@tool
+def analyze_sentiment(text: str) -> str:
+    """Analyze sentiment of market news"""
+    return "positive"
+
+@tool
+def generate_report(analysis: str) -> str:
+    """Generate investment report"""
+    return f"Report based on: {analysis}"
+
+# Create specialized agents
+market_agent = create_tool_calling_agent(
+    ChatOpenAI(model="gpt-4"),
+    [fetch_market_data],
+    ChatPromptTemplate.from_messages([
+        ("system", "You are a market data specialist"),
+        ("human", "{input}")
+    ])
+)
+
+sentiment_agent = create_tool_calling_agent(
+    ChatOpenAI(model="gpt-4"),
+    [analyze_sentiment],
+    ChatPromptTemplate.from_messages([
+        ("system", "You are a sentiment analysis specialist"),
+        ("human", "{input}")
+    ])
+)
+
+report_agent = create_tool_calling_agent(
+    ChatOpenAI(model="gpt-4"),
+    [generate_report],
+    ChatPromptTemplate.from_messages([
+        ("system", "You are a report writing specialist"),
+        ("human", "{input}")
+    ])
+)
+
+# Execute agents in sequence
+async def run_agent_team():
+    # Agent 1: Fetch market data
+    market_exec = AgentExecutor(agent=market_agent, tools=[fetch_market_data])
+    market_result = market_exec.invoke({"input": "Get AAPL price"})
+    
+    # Agent 2: Analyze sentiment
+    sentiment_exec = AgentExecutor(agent=sentiment_agent, tools=[analyze_sentiment])
+    sentiment_result = sentiment_exec.invoke({"input": "Analyze AI market trends"})
+    
+    # Agent 3: Generate report
+    report_exec = AgentExecutor(agent=report_agent, tools=[generate_report])
+    report = report_exec.invoke({
+        "input": f"Create report combining: {market_result} and {sentiment_result}"
+    })
+    
+    return report
+
+# Run the team
+result = asyncio.run(run_agent_team())
+```
+
+### Agent Team Patterns in Notebooks
+
+**Notebook 2** (`2-modelintegration.ipynb`) covers:
+- Multi-Agent Architecture fundamentals
+- Different agent types and responsibilities
+- Orchestration patterns for complex problems
+- Real-world examples (healthcare, customer support, supply chain)
+- Tools and frameworks (LangGraph, AutoGen, CrewAI)
+
+**Notebook 3** (`3-tools.ipynb`) covers:
+- How generative AI powers agent teams
+- Tool integration across multiple agents
+- Coordination mechanisms
+- Example: Autonomous decision-making in agent teams
+
+### Frameworks for Agent Teams
+
+**LangGraph** (LangChain's own)
+- Graph-based agent orchestration
+- Control flow through nodes and edges
+- State management across agents
+
+**AutoGen** (Microsoft)
+- Conversation-based multi-agent framework
+- Register custom functions across agents
+- Automatic tool use orchestration
+
+**CrewAI**
+- Role-based agent collaboration
+- Built-in memory and delegation
+- Task-oriented architecture
+
+### Key Considerations for Agent Teams
+
+#### 1. **Coordination Strategy**
+- How do agents communicate?
+- Who decides what task comes next?
+- How are conflicts resolved?
+
+#### 2. **State Management**
+- Shared knowledge base or isolated?
+- How is context passed between agents?
+- Who maintains conversation history?
+
+#### 3. **Tool Allocation**
+- Which tools belong to which agent?
+- Can agents call each other's tools?
+- How are permissions managed?
+
+#### 4. **Failure Handling**
+- What if one agent fails?
+- Should the team retry or escalate?
+- How is progress saved?
+
+#### 5. **Performance Optimization**
+- Can agents run in parallel?
+- How do we minimize API calls?
+- When should we cache results?
+
+### Common Use Cases
+
+**Customer Support**
+- **Triage Agent** → Routes inquiries
+- **Knowledge Agent** → Searches FAQs
+- **Resolution Agent** → Solves problems
+- **Escalation Agent** → Contacts humans
+
+**Research & Analysis**
+- **Literature Agent** → Searches papers
+- **Data Agent** → Processes datasets
+- **Writing Agent** → Drafts reports
+- **Review Agent** → Fact-checks
+
+**Business Operations**
+- **Demand Agent** → Forecasts sales
+- **Inventory Agent** → Manages stock
+- **Logistics Agent** → Optimizes shipping
+- **Finance Agent** → Tracks costs
+
+---
+
 ## ⚙️ Configuration
 
 ### Environment Variables
@@ -449,6 +741,19 @@ Autonomous systems that use an LLM to decide which actions to take. An agent has
 - **Reasoning**: LLM decides what to do next
 - **Tools**: Functions the agent can call
 - **Loop**: Repeats until goal is reached
+
+### Agent Teams
+Multiple agents working together to solve complex problems. Agent teams provide:
+- **Specialization** — Each agent handles specific domains
+- **Parallelization** — Multiple agents work on different tasks simultaneously
+- **Coordination** — Central orchestrator or peer-to-peer communication
+- **Scalability** — Add more agents as complexity grows
+- **Resilience** — Isolation between agents prevents cascading failures
+
+**Architectures:**
+1. **Orchestrator Pattern** — One agent coordinates others
+2. **Peer-to-Peer Pattern** — Agents communicate directly
+3. **Hierarchical Pattern** — Multiple layers of agents
 
 ### Tools
 Functions that agents can call. Defined with:
