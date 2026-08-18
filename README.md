@@ -18,6 +18,7 @@ A comprehensive learning repository demonstrating **LangChain v1.3.14** concepts
 - [Configuration](#configuration)
 - [Usage Examples](#usage-examples)
 - [Key Concepts](#key-concepts)
+- [Claude Code Agent View](#-claude-code-agent-view)
 - [Dependencies & Integrations](#dependencies--integrations)
 - [Troubleshooting](#troubleshooting)
 - [Resources](#resources)
@@ -472,6 +473,302 @@ Combining retrieved documents with LLM generation:
 1. **Retrieve** relevant documents
 2. **Augment** the prompt with context
 3. **Generate** response using LLM
+
+---
+
+## 🔍 Claude Code Agent View
+
+Claude Code provides a powerful **Agent View** feature that enables real-time visualization and monitoring of agent execution, state management, and debugging workflows. This section details how to leverage this tool when developing and testing LangChain agents.
+
+### What is Agent View?
+
+The **Agent View** is an integrated panel in Claude Code that displays detailed information about agent execution, including:
+- **Agent execution timeline** — Step-by-step breakdown of what the agent is doing
+- **Tool invocations** — Which tools the agent called and their inputs/outputs
+- **State tracking** — Current state and memory of the agent
+- **Error logs** — Any errors or warnings that occurred
+- **Performance metrics** — Execution time, token usage, costs
+- **Message history** — Full conversation context between user and agent
+
+### Why Use Agent View?
+
+Agent View solves critical challenges in agent development:
+
+1. **Debugging Complexity** — Understand why agents make certain decisions
+2. **Tool Verification** — Confirm tools are being called correctly with proper arguments
+3. **Loop Tracking** — Monitor multi-step reasoning loops (ReAct pattern)
+4. **Error Diagnosis** — Identify failures in tool execution or LLM reasoning
+5. **Performance Optimization** — Track token usage and API costs per request
+6. **Quality Assurance** — Verify agents behave correctly across different inputs
+
+### Accessing Agent View
+
+#### In Claude Code CLI
+
+When running agents with Claude Code, the Agent View appears automatically:
+
+```bash
+claude code --workspace .
+# Then run your agent code
+```
+
+The view updates in real-time as the agent executes.
+
+#### In Claude Code Web (claude.ai/code)
+
+1. Open [claude.ai/code](https://claude.ai/code)
+2. Create or open a project with agent code
+3. Run your agent with the **▶️ Run** button
+4. Click the **Agent View** tab to see execution details
+
+#### In IDE Extensions (VS Code, JetBrains)
+
+When running agents through Claude Code IDE extensions:
+
+1. Run your agent code
+2. Look for the **Agent Execution** panel in the IDE
+3. Expand to see detailed agent steps and tool calls
+
+### Agent View Features
+
+#### 1. **Execution Timeline**
+
+Shows the chronological sequence of agent steps:
+
+```
+Step 1: Initial Reasoning
+├─ Model: GPT-4
+├─ Temperature: 0.7
+└─ Input: "What is the weather in New York?"
+
+Step 2: Tool Selection
+├─ Selected Tool: get_weather
+├─ Arguments: {"location": "New York"}
+└─ Status: Running...
+
+Step 3: Tool Execution
+├─ Result: "Sunny, 72°F, humidity 65%"
+├─ Execution Time: 245ms
+└─ Status: Success
+
+Step 4: Response Generation
+├─ Model: GPT-4
+├─ Final Output: "The weather in New York is currently sunny..."
+└─ Status: Complete
+```
+
+#### 2. **Tool Call Inspector**
+
+Detailed view of each tool invocation:
+
+```json
+{
+  "tool_name": "get_weather",
+  "arguments": {
+    "location": "New York",
+    "units": "fahrenheit"
+  },
+  "execution_time_ms": 245,
+  "result": {
+    "temperature": 72,
+    "condition": "sunny",
+    "humidity": 65
+  },
+  "status": "success"
+}
+```
+
+#### 3. **State & Memory Tracking**
+
+Monitor agent internal state:
+
+```python
+# Agent State View
+{
+  "conversation_history": [
+    {"role": "user", "content": "What's the weather?"},
+    {"role": "assistant", "content": "I'll check that for you..."}
+  ],
+  "tools_available": ["get_weather", "get_forecast"],
+  "current_step": 4,
+  "total_steps": 5,
+  "memory": {
+    "queries": ["weather"],
+    "results": [...]
+  }
+}
+```
+
+#### 4. **Error & Warning Logs**
+
+Real-time error reporting:
+
+```
+⚠️ Warning: Tool 'get_weather' took 2.3s (slower than usual)
+❌ Error: Invalid argument "units" for get_weather
+📋 Info: Retrying with corrected arguments...
+✅ Success: Tool call succeeded on retry
+```
+
+#### 5. **Performance Metrics**
+
+Token usage and cost tracking:
+
+```
+Total Tokens Used: 1,247
+├─ Input Tokens: 850
+├─ Output Tokens: 397
+│
+Total API Cost: $0.024
+├─ Model: GPT-4 (0.03/1K input, 0.06/1K output)
+│
+Execution Time: 2.3 seconds
+└─ Tool Calls: 2 requests (avg 245ms each)
+```
+
+### Using Agent View in Development
+
+#### Example Workflow: Debugging a Misbehaving Agent
+
+**Scenario:** Your agent is calling the wrong tool or using incorrect arguments.
+
+1. **Run your agent** with test input
+2. **Open Agent View**
+3. **Inspect the execution timeline** — locate where it went wrong
+4. **Check tool arguments** — verify the model is generating correct parameters
+5. **Review error logs** — see what the error message was
+6. **Fix the issue** — update your tool definition or prompt
+7. **Re-run and verify** — confirm the fix works
+
+**Example Issue Detected:**
+
+```
+Step 2: Tool Selection
+❌ Selected Tool: calculate (incorrect)
+   Intended Tool: get_weather
+   
+   Problem: Model confused "weather" with math calculation
+   
+   Solution: Improve tool descriptions in agent setup
+```
+
+#### Example: Optimizing Agent Performance
+
+Use Agent View to identify bottlenecks:
+
+```
+Execution Time Breakdown:
+├─ LLM Reasoning: 850ms ✓ Normal
+├─ Tool Call #1: 2300ms ⚠️ Slow
+├─ Tool Call #2: 180ms ✓ Normal
+└─ Final Response: 200ms ✓ Normal
+
+Recommendation: Optimize get_weather tool (2.3s is slow)
+```
+
+### Agent View in Testing
+
+Use Agent View when writing tests for agents:
+
+```python
+def test_agent_weather_query():
+    agent = create_agent()
+    
+    # Run agent (Agent View appears)
+    result = agent.invoke({"input": "What's the weather?"})
+    
+    # In Agent View, verify:
+    # ✓ Correct tool was selected
+    # ✓ Arguments were formatted properly
+    # ✓ Tool executed successfully
+    # ✓ Final output was accurate
+    # ✓ No errors in execution
+    
+    assert "sunny" in result["output"].lower()
+```
+
+### Best Practices with Agent View
+
+#### 1. **Monitor First Runs**
+When you first deploy an agent, keep Agent View open to catch any issues.
+
+#### 2. **Use for Troubleshooting**
+Before diving into code, check Agent View to understand the failure.
+
+#### 3. **Compare Tool Behavior**
+Run the same query with different tools/models and compare their execution paths.
+
+#### 4. **Track Performance Over Time**
+Document execution times and costs to identify performance regressions.
+
+#### 5. **Share with Teammates**
+Screenshot or export Agent View logs for team discussion and debugging.
+
+### Agent View with LangChain Agents
+
+When using LangChain agents, Agent View automatically integrates:
+
+```python
+from langchain.agents import AgentExecutor, create_tool_calling_agent
+from langchain_openai import ChatOpenAI
+
+llm = ChatOpenAI(model="gpt-4")
+agent = create_tool_calling_agent(llm, tools, prompt)
+executor = AgentExecutor(agent=agent, tools=tools)
+
+# When you run this in Claude Code:
+result = executor.invoke({"input": "user question"})
+# Agent View automatically captures all steps above ☝️
+```
+
+Agent View shows:
+- Each LLM call and its reasoning
+- Tool selections from the executor
+- Tool execution results
+- Loop iterations (ReAct reasoning cycles)
+- Final output generation
+
+### Exporting & Sharing Agent Traces
+
+Export Agent View data for analysis:
+
+1. **Export as JSON** — Full execution trace
+2. **Export as CSV** — Metrics and performance data
+3. **Share Link** — Generate a shareable link to the execution trace
+4. **Screenshot** — Quick visual reference
+
+### Agent View Settings
+
+Customize Agent View behavior in your Claude Code settings:
+
+```json
+{
+  "agent": {
+    "view": {
+      "enabled": true,
+      "captureToolCalls": true,
+      "captureState": true,
+      "captureMetrics": true,
+      "maxHistorySteps": 100,
+      "autoExpand": ["errors", "warnings"]
+    }
+  }
+}
+```
+
+### Limitations & Considerations
+
+- **Privacy:** Agent View captures all inputs/outputs (don't expose sensitive data)
+- **Performance:** Detailed logging has minimal overhead (~2-5%)
+- **Storage:** Long execution traces consume disk space (export as needed)
+- **Real-time Updates:** Works best with latency <5s per step
+
+### Additional Resources on Agent View
+
+- [Claude Code Documentation](https://claude.ai/code)
+- [LangChain AgentExecutor Docs](https://python.langchain.com/docs/modules/agents/)
+- [Debugging Agents Guide](https://python.langchain.com/docs/debugging)
+- [Claude Code Agent View Tutorial](https://claude.ai/code/help/agent-view)
 
 ---
 
