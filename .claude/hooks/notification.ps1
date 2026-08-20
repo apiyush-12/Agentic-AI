@@ -8,5 +8,7 @@ try {
     }
 } catch {}
 
+[System.Media.SystemSounds]::Exclamation.Play()
+
 Add-Type -AssemblyName System.Windows.Forms
-[System.Windows.Forms.MessageBox]::Show($message, "Claude Code") | Out-Null
+[System.Windows.Forms.MessageBox]::Show($message, "Claude Code", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information) | Out-Null
