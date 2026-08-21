@@ -21,6 +21,7 @@ A comprehensive learning repository demonstrating **LangChain v1.3.14** concepts
 - [Key Concepts](#key-concepts)
 - [Claude Code Agent View](#-claude-code-agent-view)
 - [Claude Code Skills & MCP Plugins](#-claude-code-skills--mcp-plugins)
+- [Claude Code Hooks](#-claude-code-hooks)
 - [Dependencies & Integrations](#dependencies--integrations)
 - [Troubleshooting](#troubleshooting)
 - [Resources](#resources)
@@ -904,6 +905,33 @@ claude mcp list   # verify it shows "Connected"
 ```
 
 Context7 is available as an installable Claude Code plugin (`/plugin`).
+
+---
+
+## 🪝 Claude Code Hooks
+
+**Hooks** are automated shell commands that fire at specific points in Claude Code's lifecycle (e.g. `Notification`, `PostToolUse`, `PreToolUse`, `Stop`), letting you react to events without manual intervention — validation, logging, notifications, auto-formatting, and more.
+
+This repo includes two example hooks under `.claude/hooks/`, wired up in `.claude/settings.local.json`:
+
+| Hook | Script | Purpose |
+|------|--------|---------|
+| `Notification` | `notification.ps1` | Reads the event's JSON payload from stdin and shows a Windows message box with sound when Claude Code needs attention |
+| `PostToolUse` | `posttool-log.ps1` | Logs each tool call's name and timestamp to `posttool.log` |
+
+Example config in `settings.local.json`:
+
+```json
+{
+  "hooks": {
+    "Notification": [
+      { "matcher": "", "hooks": [{ "type": "command", "command": "powershell.exe -ExecutionPolicy Bypass -File \".claude/hooks/notification.ps1\"" }] }
+    ]
+  }
+}
+```
+
+See the [Claude Code Hooks reference](https://code.claude.com/docs/en/hooks.md) for the full list of events and payload formats.
 
 ---
 
