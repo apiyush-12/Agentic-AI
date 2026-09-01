@@ -8,3 +8,6 @@ langgraph
 pageindex
 pypdf
 requests
+deepagents
+ipykernel
+tavily-python
