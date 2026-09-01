@@ -17,6 +17,8 @@ dependencies = [
     "pageindex>=0.1.0",
     "pypdf>=5.1.0",
     "requests>=2.32.0",
+    "deepagents>=0.7.11",
+    "tavily-python>=0.8.0",
 ]
 
 [project.scripts]
