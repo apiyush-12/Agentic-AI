@@ -11,3 +11,4 @@ requests
 deepagents
 ipykernel
 tavily-python
+langchain_quickjs
