@@ -74,6 +74,20 @@ BACKEND_HELP: dict[BackendName, str] = {
     "StoreBackend": "Files live in a LangGraph store, scoped by namespace. Shared across threads.",
 }
 
+# StoreBackend/FilesystemBackend files persist across threads, but a fresh
+# thread's agent has no reason to know that unless told: it will otherwise
+# answer "I don't know" about something it actually already wrote to disk/store.
+PERSISTENT_MEMORY_PROMPT_ADDENDUM = (
+    " Your filesystem persists across conversations. Whenever the user shares "
+    "personal information (name, preferences, facts about themselves), "
+    "immediately save or update it in /user_preferences.txt -- do not just "
+    "acknowledge it in your reply and wait to be asked to save it. Before saying "
+    "you don't know something about the user or this conversation's history, call "
+    "`ls(\"/\")` to check for existing files (e.g. user_preferences.txt) and read "
+    "any that look relevant -- the answer may already be saved there from an "
+    "earlier session."
+)
+
 
 # --------------------------------------------------------------------------- #
 # Tools
@@ -280,10 +294,14 @@ def build_agent(cfg: AgentConfig, *, store: InMemoryStore | None = None) -> Buil
     elif cfg.use_skills:
         notes.append(f"No skills found under {SKILLS_DIR} - skills disabled.")
 
+    system_prompt = cfg.system_prompt
+    if cfg.backend in ("StoreBackend", "FilesystemBackend"):
+        system_prompt += PERSISTENT_MEMORY_PROMPT_ADDENDUM
+
     kwargs: dict[str, Any] = {
         "model": cfg.model,
         "tools": tools,
-        "system_prompt": cfg.system_prompt,
+        "system_prompt": system_prompt,
         "middleware": middleware,
         "skills": skills,
         "memory": memory,
