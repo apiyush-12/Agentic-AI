@@ -78,10 +78,14 @@ BACKEND_HELP: dict[BackendName, str] = {
 # thread's agent has no reason to know that unless told: it will otherwise
 # answer "I don't know" about something it actually already wrote to disk/store.
 PERSISTENT_MEMORY_PROMPT_ADDENDUM = (
-    " Your filesystem persists across conversations. Before saying you don't know "
-    "something about the user or this conversation's history, call `ls(\"/\")` to "
-    "check for existing files (e.g. user_preferences.txt) and read any that look "
-    "relevant -- the answer may already be saved there from an earlier session."
+    " Your filesystem persists across conversations. Whenever the user shares "
+    "personal information (name, preferences, facts about themselves), "
+    "immediately save or update it in /user_preferences.txt -- do not just "
+    "acknowledge it in your reply and wait to be asked to save it. Before saying "
+    "you don't know something about the user or this conversation's history, call "
+    "`ls(\"/\")` to check for existing files (e.g. user_preferences.txt) and read "
+    "any that look relevant -- the answer may already be saved there from an "
+    "earlier session."
 )
 
 
