@@ -11,3 +11,9 @@ requests
 deepagents
 ipykernel
 tavily-python
+streamlit
+langchain-huggingface
+langchain-text-splitters
+unstructured
+youtube-transcript-api
+validators
