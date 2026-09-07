@@ -14,3 +14,8 @@ tavily-python
 langchain_quickjs
 langchain-mistralai
 streamlit
+langchain-huggingface
+langchain-text-splitters
+unstructured
+youtube-transcript-api
+validators
