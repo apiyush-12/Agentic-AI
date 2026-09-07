@@ -45,7 +45,7 @@ with st.sidebar:
             type="password",
             help="Get a free key at https://console.groq.com/keys",
         )
-        groq_model = st.text_input("Groq Model", value="llama-3.3-70b-versatile")
+        groq_model = st.text_input("Groq Model", value="openai/gpt-oss-120b")
         hf_token = ""
 
 url = st.text_input("Enter a YouTube or website URL")
@@ -102,7 +102,7 @@ if st.button("Summarize", type="primary"):
                 with st.spinner(f"Summarizing with {provider}..."):
                     if provider == "Hugging Face":
                         llm_endpoint = HuggingFaceEndpoint(
-                            repo_id="mistralai/Mistral-7B-Instruct-v0.3",
+                            repo_id="mistralai/Mistral-7B-Instruct-v0.2",
                             provider="featherless-ai",
                             huggingfacehub_api_token=hf_token,
                             temperature=0.5,
