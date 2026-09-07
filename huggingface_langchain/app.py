@@ -1,5 +1,6 @@
 """
-Streamlit app: Summarize a YouTube video or a website using LangChain + Hugging Face.
+Streamlit app: Summarize a YouTube video or a website using LangChain +
+Hugging Face or Groq.
 
 Run with:
     streamlit run huggingface_langchain/app.py
@@ -13,6 +14,7 @@ from dotenv import load_dotenv
 from langchain_classic.chains.summarize import load_summarize_chain
 from langchain_community.document_loaders import UnstructuredURLLoader, YoutubeLoader
 from langchain_core.prompts import PromptTemplate
+from langchain_groq import ChatGroq
 from langchain_huggingface import ChatHuggingFace, HuggingFaceEndpoint
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
@@ -22,16 +24,29 @@ st.set_page_config(page_title="URL Summarizer", page_icon="📝")
 st.title("📝 Summarize Text From YouTube or a Website")
 
 # ---------------------------------------------------------------------------
-# Sidebar: Hugging Face token
+# Sidebar: choose a provider and supply its API key
 # ---------------------------------------------------------------------------
 with st.sidebar:
     st.subheader("Settings")
-    hf_token = st.text_input(
-        "Hugging Face API Token",
-        value=os.getenv("HUGGINGFACEHUB_API_TOKEN", ""),
-        type="password",
-        help="Get a free token at https://huggingface.co/settings/tokens",
-    )
+    provider = st.radio("LLM Provider", ["Hugging Face", "Groq"])
+
+    if provider == "Hugging Face":
+        hf_token = st.text_input(
+            "Hugging Face API Token",
+            value=os.getenv("HUGGINGFACEHUB_API_TOKEN", ""),
+            type="password",
+            help="Get a free token at https://huggingface.co/settings/tokens",
+        )
+        groq_api_key = ""
+    else:
+        groq_api_key = st.text_input(
+            "Groq API Key",
+            value=os.getenv("GROQ_API_KEY", ""),
+            type="password",
+            help="Get a free key at https://console.groq.com/keys",
+        )
+        groq_model = st.text_input("Groq Model", value="llama-3.3-70b-versatile")
+        hf_token = ""
 
 url = st.text_input("Enter a YouTube or website URL")
 
@@ -62,8 +77,10 @@ def load_documents(u: str):
 
 
 if st.button("Summarize", type="primary"):
-    if not hf_token.strip():
+    if provider == "Hugging Face" and not hf_token.strip():
         st.error("Please provide your Hugging Face API token in the sidebar.")
+    elif provider == "Groq" and not groq_api_key.strip():
+        st.error("Please provide your Groq API key in the sidebar.")
     elif not url.strip():
         st.error("Please enter a URL to summarize.")
     elif not validators.url(url):
@@ -82,15 +99,22 @@ if st.button("Summarize", type="primary"):
                 )
                 chunks = splitter.split_documents(documents)
 
-                with st.spinner("Summarizing with Hugging Face..."):
-                    llm_endpoint = HuggingFaceEndpoint(
-                        repo_id="mistralai/Mistral-7B-Instruct-v0.3",
-                        provider="featherless-ai",
-                        huggingfacehub_api_token=hf_token,
-                        temperature=0.5,
-                        max_new_tokens=512,
-                    )
-                    chat_model = ChatHuggingFace(llm=llm_endpoint)
+                with st.spinner(f"Summarizing with {provider}..."):
+                    if provider == "Hugging Face":
+                        llm_endpoint = HuggingFaceEndpoint(
+                            repo_id="mistralai/Mistral-7B-Instruct-v0.3",
+                            provider="featherless-ai",
+                            huggingfacehub_api_token=hf_token,
+                            temperature=0.5,
+                            max_new_tokens=512,
+                        )
+                        chat_model = ChatHuggingFace(llm=llm_endpoint)
+                    else:
+                        chat_model = ChatGroq(
+                            model=groq_model,
+                            api_key=groq_api_key,
+                            temperature=0.5,
+                        )
 
                     chain = load_summarize_chain(
                         chat_model,
