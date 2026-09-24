@@ -46,6 +46,7 @@ with st.sidebar:
             help="Get a free key at https://console.groq.com/keys",
         )
         groq_model = st.text_input("Groq Model", value="openai/gpt-oss-20b")
+        groq_model = st.text_input("Groq Model", value="openai/gpt-oss-120b")
         hf_token = ""
 
 url = st.text_input("Enter a YouTube or website URL")
