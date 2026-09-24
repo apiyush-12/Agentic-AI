@@ -16,3 +16,8 @@ langchain-mistralai
 streamlit
 langchain_huggingface
 huggingface_hub
+pymupdf
+langchain-core
+sentence_transformers
+faiss-cpu
+chromadb
