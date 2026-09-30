@@ -21,3 +21,4 @@ langchain-core
 sentence_transformers
 faiss-cpu
 chromadb
+mistralai
