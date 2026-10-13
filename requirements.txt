@@ -22,3 +22,9 @@ sentence_transformers
 faiss-cpu
 chromadb
 mistralai
+langsmith
+beautifulsoup4
+tiktoken
+langchain-groq 
+langchain-huggingface
+sentence-transformers
