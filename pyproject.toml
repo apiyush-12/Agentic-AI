@@ -32,6 +32,9 @@ dependencies = [
     "langsmith>=0.11.2",
     "beautifulsoup4>=4.15.0",
     "tiktoken>=0.13.0",
+    "litellm>=1.105.1",
+    "fastapi>=0.143.0",
+    "soundfile>=0.14.0",
 ]
 
 [project.scripts]
